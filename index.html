@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>감염관리 Escape Dashboard</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:linear-gradient(135deg,#0f172a,#1e3a8a);
+color:white;
+text-align:center;
+padding-top:40px;
+}
+
+.box{
+width:90%;
+max-width:560px;
+margin:auto;
+padding:35px;
+background:rgba(255,255,255,.08);
+backdrop-filter:blur(12px);
+border-radius:30px;
+box-shadow:0 0 30px rgba(0,0,0,.35);
+}
+
+input{
+width:80%;
+padding:14px;
+margin:8px;
+font-size:18px;
+border:none;
+border-radius:12px;
+}
+
+button{
+background:#ef4444;
+color:white;
+font-size:26px;
+font-weight:bold;
+padding:18px 32px;
+margin:15px;
+border:none;
+border-radius:16px;
+cursor:pointer;
+}
+
+button:hover{
+transform:scale(1.05);
+}
+
+.alert{
+font-size:34px;
+font-weight:bold;
+margin-bottom:20px;
+}
+
+#score{
+font-size:28px;
+}
+
+#timer{
+font-size:56px;
+font-weight:bold;
+color:#fca5a5;
+animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+0%{transform:scale(1);}
+50%{transform:scale(1.08);}
+100%{transform:scale(1);}
+}
+
+@keyframes shake{
+0%{transform:translateX(0);}
+25%{transform:translateX(-10px);}
+50%{transform:translateX(10px);}
+75%{transform:translateX(-10px);}
+100%{transform:translateX(0);}
+}
+
+#question{
+font-size:30px;
+line-height:1.5;
+margin:30px 0;
+}
+
+progress{
+width:90%;
+height:25px;
+}
+
+#progressText{
+margin:12px;
+font-size:22px;
+}
+
+.rankbox{
+margin-top:20px;
+padding:20px;
+background:rgba(255,255,255,.08);
+border-radius:20px;
+font-size:24px;
+}
+</style>
+
+</head>
+<body>
+
+
+<div class="box" id="start">
+
+<h1>🦠 감염관리 Escape</h1>
+<p>정답을 맞춰 안전한 김해복음병원을 만들어주세요</p>
+
+<input id="dept" placeholder="부서명">
+<br>
+
+<input id="username" placeholder="이름">
+<br>
+
+<input id="phone" type="tel" inputmode="numeric" placeholder="전화번호(- 없이 입력)">
+<br>
+
+<button onclick="startGame()">
+게임 시작
+</button>
+
+</div>
+
+
+
+<div class="box" id="game" style="display:none;">
+
+<div class="alert">
+☣ 김해복음병원 감염관리 챌린지
+</div>
+
+<h2 id="score">
+점수 0점
+</h2>
+
+<div id="progressText">
+진행률 1/0
+</div>
+
+<progress
+id="progressBar"
+value="1"
+max="">
+</progress>
+
+<div id="timer">
+10
+</div>
+
+<div id="question"></div>
+
+<button onclick="answer('O')">
+O
+</button>
+
+<button onclick="answer('X')">
+X
+</button>
+
+</div>
+
+
+
+<div class="box" id="result" style="display:none;">
+
+<h1 id="resultTitle"></h1>
+
+<h2 id="finalScore"></h2>
+
+<div class="rankbox">
+
+<h3>
+🏅 개인 결과
+</h3>
+
+<p id="myResult">
+당신의 최종 점수 표시
+</p>
+
+</div>
+
+<button onclick="location.reload()">
+다시하기
+</button>
+
+</div>
+
+
+
+<script>
+
+let current=0;
+let score=0;
+let time=10;
+let interval;
+
+const questions=[
+
+{
+q:"물과 비누를 이용한 손위생은 20초 이하로 시행한다",
+a:"X"
+},
+
+{
+q:"접촉주의 환자 대면 시 장갑만 착용한다",
+a:"X"
+},
+
+{
+q:"공기주의 환자는 1인실 입원 원칙이다",
+a:"O"
+},
+
+{
+q:"N95마스크는 격리 병실 안에서 탈의 후 나온다",
+a:"X"
+},
+
+{
+q:"알코올 손위생은 올바른 방법이 아니다",
+a:"X"
+},
+
+{
+q:"장갑 착용은 손위생을 대체할 수 있다",
+a:"X"
+},
+
+{
+q:"개인보호구는 벗는 순서가 중요하지 않다",
+a:"X"
+},
+
+{
+q:"주사침 자상 사고 후 피를 짜내야한다",
+a:"X"
+},
+
+{
+q:"주사침 뚜껑은 다시 씌우는것이 권장된다",
+a:"X"
+},
+
+{
+q:"환경표면 소독은 감염예방에서 중요 요소이다",
+a:"O"
+},
+
+{
+q:"장갑을 착용하면 환자 접촉 후 손위생을 생략할 수 있다",
+a:"X"
+},
+
+{
+q:"일반쓰레기는 의료폐기물통에 버리면 안된다",
+a:"O"
+},
+
+{
+q:"공기주의 환자 병실은 항상 문을 열어둔다",
+a:"X"
+},
+
+{
+q:"손소독제는 손이 완전히 마를때까지 문지른다",
+a:"O"
+},
+
+{
+q:"감염예방은 모든 직원이 지켜야하는 역할이다",
+a:"O"
+},
+
+{
+q:"기침 예절은 감염예방에 포함되지 않는다",
+a:"X"
+},
+
+{
+q:"개인보호구 탈의 후 손위생을 시행해야한다",
+a:"O"
+},
+
+{
+q:"사용한 바늘은 손상성 의료폐기물에 버린다",
+a:"O"
+},
+
+{
+q:"화장실 다녀온 후 알코올 손소독제를 이용한 손위생을 해도 된다",
+a:"X"
+},
+
+{
+q:"결핵은 공기주의 대상이다",
+a:"O"
+},
+
+{
+q:"마스크 착용시 입만 가리면 된다",
+a:"X"
+},
+
+{
+q:"주사침에 찔렸을 때 가장 먼저 해야하는 행동은 보고서 작성이다",
+a:"X"
+},
+
+{
+q:"오염된 바늘에 찔린경우 아무에게 알리지 않고 혼자 소독하고 넘겨도 된다",
+a:"X"
+},
+
+{
+q:"주사침 찔림 사고시 보건관리실에 보고한다",
+a:"X"
+},
+
+{
+q:"환자 접촉 전 손위생은 생략해도 된다",
+a:"X"
+},
+
+{
+q:"하나의 장갑으로 여러명의 환자를 접촉해도 괜찮다",
+a:"X"
+},
+
+{
+q:"C형간염 환자는 격리를 시행해야한다",
+a:"X"
+},
+
+{
+q:"손위생 시 손바닥과 손등만 잘 문지르면 손톱 밑은 생략해도 무방하다",
+a:"X"
+},
+
+{
+q:"사용한 마스크를 잠시 벗어둘 때 턱 아래에 걸치는 이른바 턱스크는 감염 예방 차원에서 안전한 방법이다",
+a:"X"
+},
+
+{
+q:"무균적 시술(주사제 준비 등)직전에 시행하는 손위생은 생략해서는 안되는 핵심이다",
+a:"O"
+},
+
+{
+q:"격리중인 다제내성균 환자가 사용한 혈압계와 청진기는 다른 환자에게 사용하기전 반드시 소독한다",
+a:"O"
+},
+
+{
+q:"옴 환자는 접촉주의 격리가 필요없다",
+a:"X"
+},
+
+{
+q:"환경청소 시 소독티슈 1장으로 최대한 넓은 면적을 닦는것이 좋다",
+a:"X"
+},
+
+{
+q:"환자에게 사용한 주사기는 재사용하면 안된다",
+a:"O"
+},
+
+{
+q:"손소독제는 유효기간이 지나도 사용가능하다",
+a:"X"
+},
+
+{
+q:"다제내성균이란 여러 종류의 항생제에 내성을 가져 치료가 어려운 세균을 의미한다",
+a:"O"
+},
+
+{
+q:"멸균 물품의 포장지가 젖어 있더라도 외관상 깨끗하고 구멍이 없으면 사용해도 된다",
+a:"X"
+},
+
+{
+q:"감염예방을 위해 병문안 시 꽃, 화분, 외부음식을 가져오는것은 권장되지 않는다",
+a:"O"
+},
+
+{
+q:"표준주의는 감염병 확진 판정을 받은 환자에게만 적용하는 것이다",
+a:"X"
+},
+
+{
+q:"혈액 노출 사고 시 눈에 튄 경우 생리식염수나 깨끗한 물로 씻어내야 한다",
+a:"O"
+},
+
+{
+q:"깨끗해 보이는 병원 커튼이나 문손잡이에도 세균이 있을 수 있다",
+a:"O"
+},
+
+{
+q:"장갑을 2겹을 끼는것은 손위생을 생략해도 되는 방법이다",
+a:"X"
+},
+
+{
+q:"환경 청소 시 환자의 침대는 생략해도 된다",
+a:"X"
+},
+
+{
+q:"격리 환자가 사용한 마스크는 일반쓰레기에 버린다",
+a:"X"
+},
+
+{
+q:"장갑을 벗을 때는 장갑의 겉면이 손에 닿지 않게 뒤집어서 벗어야한다",
+a:"O"
+},
+
+{
+q:"병원 복도에 비치된 손소독제는 환자와 보호자만 사용하는 것이다",
+a:"X"
+},
+
+{
+q:"활동성 폐결핵 환자는 비말주의 격리를 시행한다",
+a:"X"
+},
+
+{
+q:"기침이나 재채기를 할 때 손바닥으로 입을 가리는 것이 가장 올바른 기침 예절이다",
+a:"X"
+},
+
+{
+q:"의료폐기물 박스는 내용물이 꽉 차서 넘치기 직전에 밀봉하는 것이 좋다",
+a:"X"
+},
+
+{
+q:"일반의료폐기물은 30일동안 보관 가능하다",
+a:"X"
+},
+
+{
+q:"환자가 사용한 린넨에 혈액이 묻은 경우 기타세탁물에 해당한다",
+a:"X"
+},
+
+{
+q:"N95마스크는 착용시마다 Fit Test(밀착검사)를 시행해야한다",
+a:"O"
+},
+
+{
+q:"파종성 대상포진은 공기주의 대상이다",
+a:"O"
+},
+
+{
+q:"사용했던 개인보호구는 오염이 없어보이면 재사용해도 된다",
+a:"X"
+},
+
+{
+q:"환경청소는 눈에 보이는 오염만 제거하면 충분하다",
+a:"X"
+},
+
+{
+q:"격리환자 이동 시 사전에 해당 부서와 소통하는 것이 중요하다",
+a:"O"
+},
+
+{
+q:"환자가 사용하는 휠체어도 소독 대상이다.",
+a:"O"
+},
+
+{
+q:"격리 환자의 병실 입구에 부착된 표식을 보면 격리 유형을 알 수 있다 ",
+a:"O"
+},
+
+{
+q:"유치뇨관을 삽입하고 있는 환자의 경우 배액관은 항상 방광보다 위로 유지한다",
+a:"X"
+},
+
+{
+q:"격리환자는 물리치료, 영상 촬영 등 가장 마지막 순서로 배치하는것이 감염예방을 하는 방법이다",
+a:"O"
+},
+
+{
+q:"환경청소 시 오염이 심한 장소에서 오염이 적은 장소 순으로 시행한다",
+a:"X"
+},
+
+{
+q:"10cc 이상의 혈액을 바닥에 흘린 경우 밀대로 닦으면 된다",
+a:"X"
+},
+
+{
+q:"격리환자가 사용한 병실 청소시 바이오스팟 500ppm을 이용한다",
+a:"X"
+},
+
+{
+q:"우리병원의 손위생 수행률 목표는 85% 이상이다",
+a:"X"
+},
+
+{
+q:"설사증상이 있는 C.difficile환자 접촉 후 알코올 손소독제가 효과적이다",
+a:"X"
+},
+
+{
+q:"N95 마스크를 벗을 때는 마스크의 앞면을 잡고 아래로 당겨서 벗는것은 올바르지 않다",
+a:"O"
+},
+
+{
+q:"멸균된 물품이라면 유효기간이 지나도 사용가능하다",
+a:"X"
+},
+
+{
+q:"수액 연결부위가 바닥에 닿은 경우 알코올솜으로 닦고 다시 연결하면 된다",
+a:"X"
+},
+
+{
+q:"감염노출 사고 보고서는 본인의 과실인 경우 작성하지 않는다",
+a:"X"
+},
+
+{
+q:"감염병 유행 시기에는 면회객의 병문안을 제한하는 것이 감염예방에 도움이 된다",
+a:"O"
+},
+
+{
+q:"잠복결핵 환자는 타인에게 균을 전파할 수 있으므로 병실 격리가 필수요소이다",
+a:"X"
+},
+
+{
+q:"인슐린 펜이나 채혈용 란셋은 바늘만 교체하면 여러 환자에게 공유해서 사용할 수 있다",
+a:"X"
+},
+
+{
+q:"C형 간염은 주사침 사고 후 즉시 복용할 수 있는 예방약이 존재한다",
+a:"X"
+},
+
+{
+q:"개인보호구를 탈의할 때 오염이 가장 심한 장갑을 가장 먼저 벗는 것이 원칙이다",
+a:"O"
+},
+
+{
+q:"음압 격리실은 공기 흐름이 복도에서 병실 안쪽으로 흐르도록 설계된 곳이다",
+a:"O"
+},
+
+{
+q:"영상의학과 촬영시 감염 환자 촬영 후, 다음 환자를 받기 전 장비의 접촉 부위를 반드시 소독한다",
+a:"O"
+},
+
+{
+q:"병원 내 정수기나 공용 공간의 위생 관리는 감염 예방과 무관하다",
+a:"X"
+},
+
+{
+q:"멸균 물품 사용 시 포장지에 유효기간이 적혀 있지 않다면 무기한 사용이 가능하다",
+a:"X"
+},
+
+{
+q:"소독액의 농도는 높으면 높을수록 좋은것이다",
+a:"X"
+},
+
+{
+q:"비말주의 격리 환자 병실은 음압을 유지해야한다",
+a:"X"
+},
+
+{
+q:"혈액이 피부에 튄 경우 즉시 알코올솜으로만 닦으면 충분하다",
+a:"X"
+},
+
+{
+q:"마스크, 수술포 등 일회용 제품도 세탁이 가능하다",
+a:"X"
+},
+
+{
+q:"B형간염 항체가 있는 직원이 B형간염 환자에게 찔린 경우 추가 조치가 필요없다",
+a:"O"
+},
+
+{
+q:"어떠한 증상도 없는 환자는 감염이 없는 환자이다",
+a:"X"
+},
+
+{
+q:"격리환자 병실에서 사용한 의료폐기물은 병실 안에서 밀봉한다",
+a:"O"
+},
+
+{
+q:"손위생용 알코올 소독제는 화재 위험이 있으므로 병실 내 비치가 금지된다",
+a:"X"
+},
+
+{
+q:"같은 병실의 코호트 격리 환자들 사이에서는 손위생을 생략해도 된다",
+a:"X"
+},
+
+{
+q:"감염환자의 격리 해제일은 간호사가 단독으로 결정할 수 있다",
+a:"X"
+},
+
+{
+q:"병원 청소 시 사용하는 걸레는 구역별로 구분해야한다",
+a:"O"
+},
+
+{
+q:"가족 중 수두환자가 발생한 경우 아무 보고없이 출근해도 무방하다",
+a:"X"
+},
+
+{
+q:"병원 내 약품 냉장고에 개인 음식을 넣어 보관해도 무방하다",
+a:"X"
+},
+
+{
+q:"감염환자 이송시 이송하는 직원도 개인보호구를 꼭 착용해야한다",
+a:"O"
+},
+
+{
+q:"병원 내 엘리베이터는 감염 전파 위험이 낮은 공간이다",
+a:"X"
+},
+
+{
+q:"감염예방을 위한 직원교육은 신규 직원만 받으면 된다",
+a:"X"
+},
+
+{
+q:"병원 유니폼을 입고 외부 식당에서 식사하는 것은 감염위험과 무관하다",
+a:"X"
+},
+
+{
+q:"장갑을 끼고 있으면 날카로운 물건에 찔려도 감염을 예방할 수 있다",
+a:"X"
+},
+
+{
+q:"에어컨 필터나 환기구도 감염 예방 관리 대상이된다",
+a:"O"
+},
+
+{
+q:"병문안 온 방문객은 병원 감염관리 지침을 따를 의무가 없다",
+a:"X"
+},
+
+{
+q:"병원에서의 손위생은 환자를 집접 접촉하지 않는 행정직원은 안해도 무방하다",
+a:"X"
+},
+
+
+{
+q:"피가 묻은 거즈는 손상성 의료폐기물에 버린다",
+a:"X"
+},
+
+];
+
+const totalQuestions=questions.length;
+
+/* 구글시트 보내기 함수 */
+function sendScore(){
+
+fetch(
+"https://script.google.com/macros/s/AKfycbwTYmCfMGm0i6dkaz_C5JDhGQ687pbhgOpKOwRsPcQg8YDgmWpF_lC0KO1SuyRgw8qU8g/exec",
+{
+
+method:"POST",
+
+body:JSON.stringify({
+
+dept:
+document.getElementById("dept").value,
+
+name:
+document.getElementById("username").value,
+
+phone:
+document.getElementById("phone").value,
+
+score:score,
+
+question:current
+
+})
+
+})
+
+.catch(
+err=>console.log(err)
+);
+
+}
+
+function startGame(){
+
+const dept =
+document.getElementById("dept").value.trim();
+
+const username =
+document.getElementById("username").value.trim();
+
+const phone =
+document.getElementById("phone").value
+.replace(/-/g,"")
+.trim();
+
+if(
+dept==="" ||
+username==="" ||
+phone===""
+){
+
+alert("정보를 모두 입력하세요");
+return;
+
+}
+
+if(!/^[0-9]{8,13}$/.test(phone)){
+
+alert("전화번호를 숫자만 입력하세요");
+return;
+
+}
+
+fetch(
+"https://script.google.com/macros/s/AKfycbwTYmCfMGm0i6dkaz_C5JDhGQ687pbhgOpKOwRsPcQg8YDgmWpF_lC0KO1SuyRgw8qU8g/exec?phone="+phone
+)
+
+.then(res=>res.text())
+
+.then(result=>{
+
+if(result==="duplicate"){
+
+alert("이미 참여한 전화번호입니다.");
+return;
+
+}
+
+startRealGame();
+
+})
+
+.catch(err=>{
+
+console.log(err);
+
+/* 중복검사 실패해도 게임 시작 */
+startRealGame();
+
+});
+
+}
+
+function startRealGame(){
+
+score = 0;
+current = 0;
+
+document.getElementById("score").innerText = "점수 0점";
+
+document.getElementById("start").style.display="none";
+
+questions.sort(()=>Math.random()-0.5);
+
+document.getElementById("progressBar").max = totalQuestions;
+
+document.getElementById("game").style.display="block";
+
+loadQuestion();
+
+}
+
+function loadQuestion(){
+
+if(current>=questions.length){
+
+winGame();
+return;
+
+}
+
+time=10;
+
+document.getElementById("timer").innerText=time;
+
+document.getElementById("question").innerText=
+questions[current].q;
+
+document.getElementById("progressText").innerText=
+"진행률 "+(current+1)+"/"+totalQuestions;
+
+document.getElementById("progressBar").value=current+1;
+
+clearInterval(interval);
+
+interval=setInterval(function(){
+
+time--;
+
+document.getElementById("timer").innerText=time;
+
+if(time<=0){
+
+gameOver("시간초과");
+
+}
+
+},1000);
+
+}
+
+
+function answer(choice){
+
+if(choice===questions[current].a){
+
+score+=1;
+
+document.getElementById(
+"score"
+).innerText=
+"점수 "+score+"점";
+
+current++;
+
+loadQuestion();
+
+}
+
+else{
+
+gameOver("오답");
+
+}
+
+}
+
+
+function gameOver(reason){
+
+document.body.style.animation = "none";
+
+setTimeout(function(){
+
+document.body.style.animation = "shake 0.4s";
+
+},10);
+
+clearInterval(interval);
+
+/* 시트 저장 */
+sendScore();
+
+document.getElementById(
+"game"
+).style.display="none";
+
+document.getElementById(
+"result"
+).style.display="block";
+
+document.getElementById(
+"resultTitle"
+).innerText=
+"😂감염관리 미션 실패😂 ("+reason+")";
+
+document.getElementById(
+"finalScore"
+).innerText=
+"최종점수 "+score+"점";
+
+document.getElementById(
+"myResult"
+).innerHTML=
+"최종 점수 : "+score+"점<br>😂김해복음병원의 감염을 막아내지 못했습니다😂"
+
+}
+
+
+
+function winGame(){
+
+clearInterval(interval);
+
+/* 시트 저장 */
+sendScore();
+
+document.getElementById(
+"game"
+).style.display="none";
+
+document.getElementById(
+"result"
+).style.display="block";
+
+document.getElementById(
+"resultTitle"
+).innerText=
+"❤️감염관리 미션 성공 ❤️";
+
+document.getElementById(
+"finalScore"
+).innerText=
+"최종점수 "+score+"점";
+
+document.getElementById(
+"myResult"
+).innerHTML=
+"🏆 감염관리 미션 클리어!<br>최종 점수 : "+score+"점<br>김해복음병원의 감염을 막아냈습니다."
+
+}
+
+</script>
+
+</body>
+</html>
