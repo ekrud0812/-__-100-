@@ -106,7 +106,40 @@ border-radius:20px;
 font-size:24px;
 }
 </style>
+.raceTrack{
+width:90%;
+max-width:500px;
+height:40px;
+margin:20px auto;
+background:rgba(255,255,255,.15);
+border-radius:20px;
+position:relative;
+overflow:hidden;
+}
 
+.raceBar{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,#22c55e,#16a34a);
+border-radius:20px;
+transition:width 0.3s ease;
+}
+
+.runner{
+position:absolute;
+top:-25px;
+left:0%;
+transition:left 0.3s ease;
+font-size:26px;
+}
+
+.finish{
+position:absolute;
+right:0;
+top:-25px;
+font-size:26px;
+}
+  
 </head>
 <body>
 
@@ -152,7 +185,12 @@ id="progressBar"
 value="1"
 max="">
 </progress>
-
+<div class="raceTrack">
+  <div class="raceBar"></div>
+  <div class="runner">🏃</div>
+  <div class="finish">🏁</div>
+</div>
+  
 <div id="timer">
 15
 </div>
@@ -845,7 +883,11 @@ document.getElementById("progressText").innerText=
 "진행률 "+(current+1)+"/"+totalQuestions;
 
 document.getElementById("progressBar").value=current+1;
+let percent = ((current+1) / totalQuestions) * 100;
 
+document.querySelector(".raceBar").style.width = percent + "%";
+document.querySelector(".runner").style.left = percent + "%";
+  
 clearInterval(interval);
 
 interval=setInterval(function(){
