@@ -880,10 +880,6 @@ document.getElementById("progressText").innerText=
 "진행률 "+(current+1)+"/"+totalQuestions;
 
 document.getElementById("progressBar").value=current+1;
-let percent = ((current+1) / totalQuestions) * 100;
-
-document.querySelector(".raceBar").style.width = percent + "%";
-document.querySelector(".runner").style.left = percent + "%";
   
 clearInterval(interval);
 
